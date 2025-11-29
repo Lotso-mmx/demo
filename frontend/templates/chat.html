@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaiP智能聊天室</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="chat-body">
+    <div class="chat-container">
+        <!-- 左侧侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>在线用户</h2>
+                <button id="logout-btn" class="btn-logout">退出</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="搜索用户...">
+            </div>
+            <div class="user-list" id="user-list">
+                <!-- 在线用户列表会通过JavaScript动态生成 -->
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 右侧聊天区域 -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2 id="current-room">聊天室</h2>
+                <div class="room-info">
+                    <span id="online-count">0 人在线</span>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chat-messages">
+                <!-- 聊天消息会通过JavaScript动态生成 -->
+                <div class="welcome-message">
+                    <p>欢迎来到DaiP智能聊天室！</p>
+                    <p>提示：使用 @xxx 可以@用户，使用 @电影 url 可以分享电影，使用 @川农 可以与AI对话。</p>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="emoji-selector" id="emoji-selector">
+                    <!-- Emoji选择器 -->
+                    <button id="toggle-emoji" class="btn-emoji">😊</button>
+                    <div class="emoji-panel" id="emoji-panel">
+                        <!-- Emoji选项 -->
+                    </div>
+                </div>
+                <input type="text" id="message-input" placeholder="输入消息..." autocomplete="off">
+                <button id="send-btn" class="btn-send">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

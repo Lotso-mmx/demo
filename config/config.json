@@ -1,0 +1,23 @@
+{
+    "servers": [
+        {
+            "name": "本地服务器",
+            "host": "localhost",
+            "port": 5000
+        },
+        {
+            "name": "局域网服务器1",
+            "host": "192.168.1.100",
+            "port": 5000
+        },
+        {
+            "name": "局域网服务器2",
+            "host": "192.168.1.101",
+            "port": 5000
+        }
+    ],
+    "app": {
+        "debug": true,
+        "secret_key": "your-secret-key-here"
+    }
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaiP智能聊天室 - 登录</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-header">
+            <h1>DaiP智能聊天室</h1>
+            <p>请输入昵称并选择服务器登录</p>
+        </div>
+        <div class="login-form">
+            <div class="form-group">
+                <label for="username">昵称</label>
+                <input type="text" id="username" placeholder="请输入您的昵称" required>
+                <small id="username-hint"></small>
+            </div>
+            <div class="form-group">
+                <label for="server">服务器</label>
+                <select id="server" required>
+                    <option value="">正在加载服务器列表...</option>
+                </select>
+            </div>
+            <button id="login-btn" class="btn-primary">登录</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>
