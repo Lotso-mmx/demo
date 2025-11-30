@@ -81,6 +81,9 @@ def handle_login(data):
         'online_users': list(online_users.keys())
     })
     
+    # 发送历史消息给新登录用户
+    emit('history_messages', history_messages, room=sid)
+    
     # 通知房间内其他用户有新用户加入
     emit('user_joined', {
         'username': username,

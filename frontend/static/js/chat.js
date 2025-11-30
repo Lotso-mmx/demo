@@ -83,11 +83,54 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 根据消息类型处理
         if (data.type === 'movie') {
-            messageContent.innerHTML = `<strong>分享了电影：</strong><br>${data.additional_data?.url || data.message}`;
-            // 这里可以添加电影播放器的初始化代码
+            const originalUrl = data.additional_data?.url || '';
+            messageContent.innerHTML = `<strong>分享了电影：</strong><br>${originalUrl}`;
+            
+            // 创建电影播放器iframe
             const movieContainer = document.createElement('div');
             movieContainer.className = 'movie-container';
-            movieContainer.innerHTML = `<div class="movie-placeholder">电影播放器将在这里显示</div>`;
+            
+            if (originalUrl) {
+                // 验证URL格式
+                let urlToParse = originalUrl;
+                if (!urlToParse.startsWith('http://') && !urlToParse.startsWith('https://')) {
+                    urlToParse = 'https://' + urlToParse;
+                }
+                
+                // 生成解析URL
+                const parsedUrl = `https://jx.m3u8.tv/jiexi/?url=${encodeURIComponent(urlToParse)}`;
+                
+                // 添加加载状态
+                movieContainer.innerHTML = `<div class="movie-loading">正在加载电影播放器...</div>`;
+                
+                // 创建iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = parsedUrl;
+                iframe.width = '400';
+                iframe.height = '400';
+                iframe.style.border = 'none';
+                iframe.style.borderRadius = '8px';
+                iframe.style.boxShadow = '0 2px 8px rgba(156, 39, 176, 0.3)';
+                iframe.title = '电影播放';
+                
+                // 监听iframe加载完成，移除加载状态
+                iframe.onload = function() {
+                    const loadingElement = movieContainer.querySelector('.movie-loading');
+                    if (loadingElement) {
+                        loadingElement.remove();
+                    }
+                };
+                
+                // 监听iframe加载错误
+                iframe.onerror = function() {
+                    movieContainer.innerHTML = `<div class="movie-error">电影播放器加载失败，请检查链接是否有效</div>`;
+                };
+                
+                movieContainer.appendChild(iframe);
+            } else {
+                movieContainer.innerHTML = `<div class="movie-placeholder">无效的电影链接</div>`;
+            }
+            
             messageContent.appendChild(movieContainer);
         } else if (data.type === 'ai_chat') {
             messageContent.textContent = data.message;
@@ -211,6 +254,21 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('login_success', function(data) {
         console.log('登录成功');
         updateUserList(data.online_users);
+    });
+
+    socket.on('history_messages', function(messages) {
+        console.log('收到历史消息:', messages.length);
+        // 清空聊天区域，只保留欢迎信息
+        const welcomeMessages = chatMessages.querySelectorAll('.welcome-message');
+        chatMessages.innerHTML = '';
+        // 重新添加欢迎信息
+        welcomeMessages.forEach(msg => {
+            chatMessages.appendChild(msg);
+        });
+        // 显示历史消息
+        messages.forEach(message => {
+            addMessage(message);
+        });
     });
 
     socket.on('login_failed', function(data) {
