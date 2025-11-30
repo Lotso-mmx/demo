@@ -3,11 +3,23 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
 import eventlet
+import openai
+import time
+import asyncio
 
 # 使用eventlet作为异步后端
 eventlet.monkey_patch()
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
+
+# 配置OpenAI API
+oai_client = openai.OpenAI(
+    api_key='sk-curqupvhfgebshadtwltojqmuhaxlkxmfqgpcptxxazpqqgb',
+    base_url='https://api.siliconflow.cn/v1/'
+)
+
+# 存储历史消息
+history_messages = []
 
 # 从配置文件加载配置
 config_path = os.path.join(os.path.dirname(__file__), '../config/config.json')
@@ -90,6 +102,19 @@ def handle_login(data):
         'online_users': list(online_users.keys())
     }, room=room_name, skip_sid=sid)
 
+async def get_ai_response(query):
+    """获取AI响应"""
+    try:
+        response = oai_client.chat.completions.create(
+            model="Qwen/Qwen2.5-7B-Instruct",
+            messages=[{"role": "user", "content": query}],
+            stream=True
+        )
+        return response
+    except Exception as e:
+        print(f"AI API调用错误: {e}")
+        return None
+
 @socketio.on('send_message')
 def handle_message(data):
     username = data['username']
@@ -106,12 +131,92 @@ def handle_message(data):
         if len(parts) > 1:
             message_type = 'movie'
             additional_data = {'url': parts[1]}
-    # 检查是否是@川农命令
-    elif message.startswith('@川农'):
+    # 检查是否是@川农或@川小农命令
+    elif message.startswith('@川农') or message.startswith('@川小农'):
         parts = message.split(' ', 1)
         if len(parts) > 1:
             message_type = 'ai_chat'
             additional_data = {'query': parts[1]}
+            
+            # 移除重复发送用户消息的代码，避免重复显示
+            
+            # 处理AI响应
+            query = parts[1]
+            
+            # 使用线程池执行AI请求，避免阻塞
+            from flask import copy_current_request_context
+            
+            @copy_current_request_context
+            def generate_ai_response():
+                try:
+                    print(f"开始AI响应生成，查询内容: {query}")
+                    
+                    # 使用用户提供的提示词作为默认提示词
+                    system_prompt = """角色：你是一名计算机科学与技术专业的方案编写助手 
+功能： 
+1.你可以接受用户输入的信息或关键词，通过信息或关键词，你可以分析生成与之有关的10个文案主题，以供用户选择。主题列表形式如下： 
+【1】xxxxxx 
+【2】uuuuuuu 
+........... 
+2.你需要提示用户选择主题编号，并通过改主题编号对应的主题内容，生成两种风格的大纲，大纲需要包含一级、二级标题，风格如下： 
+风格一：专业风 
+风格二：学生风 
+3.你需要提示用户选择风格，并按风格生成与之对应的详细内容。 
+以提示词+AI开发工具开发趣味软件的案例 
+正式启动项目开发了"""
+                    
+                    # 构建响应消息
+                    fixed_response = f"你好！我是川小农AI，专业方案编写助手。\n\n{system_prompt}\n\n请输入您的信息或关键词，我将为您生成相关的文案主题。"
+                    
+                    # 模拟流式响应
+                    ai_response = ""
+                    for char in fixed_response:
+                        ai_response += char
+                        emit('ai_response_chunk', {
+                            'sender': '川小农',
+                            'chunk': char,
+                            'full_response': ai_response
+                        }, room=room_name)
+                        time.sleep(0.01)  # 控制输出速度，缩短思考时间
+                    print("AI响应生成完成")
+                    
+                    # 保存完整AI消息到历史
+                    if ai_response:
+                        ai_message = {
+                            'username': '川小农',
+                            'message': ai_response,
+                            'timestamp': time.time() * 1000,
+                            'type': 'ai_response',
+                            'additional_data': None
+                        }
+                        history_messages.append(ai_message)
+                        # 限制历史消息数量
+                        if len(history_messages) > 1000:
+                            history_messages.pop(0)
+                except Exception as e:
+                    print(f"AI响应生成错误: {type(e).__name__}: {str(e)}")
+                    import traceback
+                    traceback.print_exc()  # 打印完整的错误堆栈
+                    # 发送错误消息
+                    emit('ai_response_chunk', {
+                        'sender': '川小农',
+                        'chunk': f"抱歉，我暂时无法回答您的问题。错误: {type(e).__name__}",
+                        'full_response': f"抱歉，我暂时无法回答您的问题。错误: {type(e).__name__}"
+                    }, room=room_name)
+            
+            # 发送AI聊天请求消息到前端，以便显示"正在思考..."
+            emit('new_message', {
+                'username': username,
+                'message': message,
+                'timestamp': timestamp,
+                'type': 'ai_chat'
+            }, room=room_name)
+            
+            # 在后台线程中执行，确保new_message事件先到达前端
+            eventlet.spawn(generate_ai_response)
+            
+            # 不执行后续的默认消息发送
+            return
     # 检查是否是@其他用户
     elif message.startswith('@'):
         message_type = 'mention'
@@ -124,6 +229,19 @@ def handle_message(data):
         'type': message_type,
         'additional_data': additional_data
     }, room=room_name)
+    
+    # 保存普通消息到历史
+    if message_type != 'ai_chat':
+        history_messages.append({
+            'username': username,
+            'message': message,
+            'timestamp': timestamp,
+            'type': message_type,
+            'additional_data': additional_data
+        })
+        # 限制历史消息数量
+        if len(history_messages) > 1000:
+            history_messages.pop(0)
 
 if __name__ == '__main__':
     host = '0.0.0.0'  # 允许所有IP访问

@@ -134,10 +134,31 @@ document.addEventListener('DOMContentLoaded', function() {
             messageContent.appendChild(movieContainer);
         } else if (data.type === 'ai_chat') {
             messageContent.textContent = data.message;
-            // 模拟AI回复
-            setTimeout(() => {
-                addAIMessage('川农', '您好！我是AI助手川农，很高兴为您服务。');
-            }, 1000);
+            
+            // 组装并添加用户消息
+            messageDiv.appendChild(messageHeader);
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 准备接收AI响应
+            const messageId = `ai-${Date.now()}`;
+            // 添加正在思考的状态
+            const thinkingMessage = document.createElement('div');
+            thinkingMessage.id = `ai-message-${messageId}`;
+            thinkingMessage.className = 'ai-message thinking';
+            thinkingMessage.innerHTML = `
+                <div class="message-header"><span class="message-username">川小农</span></div>
+                <div class="message-content"><span class="thinking-dots">正在思考...</span></div>
+            `;
+            chatMessages.appendChild(thinkingMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 存储当前AI消息ID，用于流式更新
+            window.currentAIMessageId = messageId;
+            
+            // 阻止后续的消息添加逻辑
+            return;
         } else if (data.type === 'mention') {
             messageContent.className = 'message-content mention';
             // 高亮@用户部分
@@ -159,23 +180,44 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // 添加AI消息
-    function addAIMessage(sender, content) {
-        const aiMessageDiv = document.createElement('div');
-        aiMessageDiv.className = 'ai-message';
+    // 添加AI消息，支持流式更新
+    function addAIMessage(sender, content, isStreaming = false, messageId = null) {
+        let aiMessageDiv;
         
-        const header = document.createElement('div');
-        header.className = 'message-header';
-        header.innerHTML = `<span class="message-username">${sender}</span>`;
+        // 如果是流式更新，查找现有的AI消息元素
+        if (isStreaming && messageId) {
+            aiMessageDiv = document.getElementById(`ai-message-${messageId}`);
+            if (!aiMessageDiv) return;
+            
+            // 更新内容
+            const contentDiv = aiMessageDiv.querySelector('.message-content');
+            if (contentDiv) {
+                contentDiv.textContent = content;
+            }
+        } else {
+            // 创建新的AI消息元素
+            const messageId = `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            aiMessageDiv = document.createElement('div');
+            aiMessageDiv.id = `ai-message-${messageId}`;
+            aiMessageDiv.className = 'ai-message';
+            
+            const header = document.createElement('div');
+            header.className = 'message-header';
+            header.innerHTML = `<span class="message-username">${sender}</span>`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            aiMessageDiv.appendChild(header);
+            aiMessageDiv.appendChild(contentDiv);
+            
+            chatMessages.appendChild(aiMessageDiv);
+        }
         
-        const contentDiv = document.createElement('div');
-        contentDiv.textContent = content;
-        
-        aiMessageDiv.appendChild(header);
-        aiMessageDiv.appendChild(contentDiv);
-        
-        chatMessages.appendChild(aiMessageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        return messageId;
     }
 
     // 更新在线用户列表
@@ -297,6 +339,33 @@ document.addEventListener('DOMContentLoaded', function() {
         systemMessage.className = 'welcome-message';
         systemMessage.innerHTML = `<p>${data.username} 离开了聊天室</p>`;
         chatMessages.appendChild(systemMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+    
+    // 监听AI响应流
+    socket.on('ai_response_chunk', function(data) {
+        const sender = data.sender || '川小农';
+        const fullResponse = data.full_response || '';
+        
+        // 获取当前AI消息ID
+        const messageId = window.currentAIMessageId;
+        if (messageId) {
+            // 查找现有的AI消息元素
+            const aiMessageDiv = document.getElementById(`ai-message-${messageId}`);
+            if (aiMessageDiv) {
+                // 移除正在思考的状态
+                aiMessageDiv.classList.remove('thinking');
+                
+                // 更新内容
+                const contentDiv = aiMessageDiv.querySelector('.message-content');
+                if (contentDiv) {
+                    // 使用textContent确保没有HTML标签被解析
+                    contentDiv.textContent = fullResponse;
+                }
+            }
+        }
+        
+        // 滚动到底部
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
 
