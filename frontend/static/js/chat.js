@@ -8,6 +8,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const onlineCount = document.getElementById('online-count');
     const toggleEmojiBtn = document.getElementById('toggle-emoji');
     const emojiPanel = document.getElementById('emoji-panel');
+    
+    // 添加调试信息，显示DOM元素是否正确获取
+    console.log('DOM元素获取结果:');
+    console.log('chatMessages:', chatMessages);
+    console.log('messageInput:', messageInput);
+    console.log('sendBtn:', sendBtn);
+    console.log('logoutBtn:', logoutBtn);
+    console.log('userList:', userList);
+    console.log('onlineCount:', onlineCount);
+    console.log('toggleEmojiBtn:', toggleEmojiBtn);
+    console.log('emojiPanel:', emojiPanel);
 
     // 从localStorage获取用户信息
     const username = localStorage.getItem('chat_username');
@@ -23,8 +34,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const server = JSON.parse(serverStr);
 
     // 创建WebSocket连接
-    let socket = io();
+    let socket = io(window.location.origin, {
+        transports: ['polling', 'websocket'],
+        timeout: 5000
+    });
     let connected = false;
+    
+    // 添加调试信息，显示socket连接状态
+    console.log('Socket初始化状态:', socket);
+    socket.on('connect_error', function(error) {
+        console.error('连接错误:', error);
+    });
+    socket.on('connect_timeout', function() {
+        console.error('连接超时');
+    });
 
     // 常用emoji列表
     const commonEmojis = [
@@ -250,17 +273,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = messageInput.value.trim();
         if (!message) return;
 
+        // 检查socket连接状态
+        if (!socket.connected) {
+            console.error('无法发送消息：Socket连接已断开');
+            alert('无法发送消息：网络连接已断开，请刷新页面重试');
+            return;
+        }
+
+        const timestamp = Date.now();
         const data = {
             username: username,
             message: message,
-            timestamp: new Date().toISOString()
+            timestamp: timestamp
         };
 
-        // 发送消息
-        socket.emit('send_message', data);
+        // 添加调试信息
+        console.log('尝试发送消息...');
+        console.log('当前socket连接状态:', socket.connected);
+        console.log('socket ID:', socket.id);
+        console.log('准备发送的消息数据:', data);
         
-        // 清空输入框
-        messageInput.value = '';
+        // 发送消息
+        try {
+            // 添加回调函数以获取服务器确认
+            socket.emit('send_message', data, function(response) {
+                console.log('服务器对send_message的响应:', response);
+            });
+            console.log('消息已发送到服务器');
+            messageInput.value = '';
+        } catch (error) {
+            console.error('发送消息时发生错误:', error);
+            console.error('错误详情:', error.stack);
+            alert('发送消息时发生错误: ' + error.message);
+        }
     }
 
     // 处理退出登录
@@ -275,10 +320,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 检查用户是否登录
     function checkLogin() {
+        console.log('检查登录状态: connected=' + connected + ', username=' + username);
         if (!connected) {
-            // 发送登录信息
-            socket.emit('login', { username: username });
+            console.log('尚未连接，等待连接后再登录');
+            return;
         }
+        // 发送登录信息
+        console.log('发送登录信息:', { username: username });
+        socket.emit('login', { username: username });
     }
 
     // 事件监听 - Socket.IO
@@ -286,6 +335,37 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('连接成功');
         connected = true;
         checkLogin();
+    });
+    
+    socket.on('login_success', function(data) {
+        console.log('登录成功:', data);
+        updateUserList(data.online_users);
+    });
+    
+    socket.on('login_failed', function(data) {
+        console.error('登录失败:', data);
+        alert('登录失败: ' + data.message);
+        window.location.href = '/';
+    });
+    
+    // 添加调试信息，监听消息发送成功的确认
+    socket.on('message_sent', function(data) {
+        console.log('消息发送确认:', data);
+    });
+    
+    // 添加调试信息，监听任何可能的错误
+    socket.on('error', function(error) {
+        console.error('Socket错误:', error);
+    });
+    
+    // 添加调试信息，监听消息发送事件的响应
+    socket.on('send_message_response', function(data) {
+        console.log('消息发送响应:', data);
+    });
+
+    // 监听消息发送确认事件
+    socket.on('message_sent', function(data) {
+        console.log('消息发送成功确认:', data);
     });
 
     socket.on('disconnect', function() {
@@ -370,20 +450,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 事件监听 - DOM
-    sendBtn.addEventListener('click', sendMessage);
-
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
+    try {
+        console.log('添加事件监听器...');
+        sendBtn.addEventListener('click', function() {
+            console.log('发送按钮被点击');
             sendMessage();
-        }
-    });
+        });
+        console.log('发送按钮事件监听器添加成功');
 
-    logoutBtn.addEventListener('click', handleLogout);
+        messageInput.addEventListener('keypress', function(e) {
+            console.log('键盘按键:', e.key);
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                console.log('Enter键被按下，调用sendMessage');
+                sendMessage();
+            }
+        });
+        console.log('消息输入框事件监听器添加成功');
 
-    toggleEmojiBtn.addEventListener('click', function() {
-        emojiPanel.classList.toggle('active');
-    });
+        logoutBtn.addEventListener('click', handleLogout);
+        console.log('退出按钮事件监听器添加成功');
+
+        toggleEmojiBtn.addEventListener('click', function() {
+            console.log('表情按钮被点击');
+            emojiPanel.classList.toggle('active');
+        });
+        console.log('表情按钮事件监听器添加成功');
+    } catch (error) {
+        console.error('添加事件监听器时发生错误:', error);
+    }
 
     // 点击其他地方关闭emoji面板
     document.addEventListener('click', function(e) {
