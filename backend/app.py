@@ -10,6 +10,7 @@ import openai
 import time
 import asyncio
 from weather_handler import weather_handler
+from news_handler import news_handler
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -152,8 +153,46 @@ def handle_message(data):
         message_type = 'text'
         additional_data = None
     
+        # 检查是否是@每天60s命令
+        if message.startswith('@每天60s') or message.startswith('@每天60秒'):
+            print(f"处理@每天60s命令")
+            
+            # 先发送用户消息到聊天室
+            emit('new_message', {
+                'username': username,
+                'message': message,
+                'timestamp': timestamp,
+                'type': 'text'
+            }, room=room_name)
+            
+            # 处理新闻查询
+            news_data = news_handler.handle_news_command(message)
+            print(f"新闻查询结果: {news_data}")
+            
+            if news_data:
+                # 成功获取新闻，广播新闻卡片
+                emit('news_card', news_data, room=room_name)
+                print("新闻卡片已发送")
+                
+                # 保存新闻命令消息到历史
+                history_messages.append({
+                    'username': username,
+                    'message': message,
+                    'timestamp': timestamp,
+                    'type': 'text',
+                    'additional_data': None
+                })
+            else:
+                # 新闻查询失败，发送错误消息
+                emit('news_error', {
+                    'message': '新闻获取失败，请稍后再试'
+                }, room=sid)
+                print("新闻查询失败")
+            
+            # 不执行后续的默认消息发送
+            return
         # 检查是否是@天气命令
-        if message.startswith('@天气'):
+        elif message.startswith('@天气'):
             parts = message.split(' ', 1)
             if len(parts) > 1:
                 city = parts[1].strip()

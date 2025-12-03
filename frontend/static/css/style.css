@@ -911,3 +911,93 @@ body {
     font-weight: 500;
     pointer-events: none;
 }
+
+/* ========== 新闻功能样式 ========== */
+
+/* 新闻卡片样式 */
+.news-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 15px auto;
+    max-width: 600px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    color: white;
+    animation: slideIn 0.5s ease-out;
+}
+
+.news-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.news-icon {
+    font-size: 32px;
+    margin-right: 12px;
+}
+
+.news-title-info {
+    flex: 1;
+}
+
+.news-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: white;
+}
+
+.news-date {
+    font-size: 14px;
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.news-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.news-image {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.news-image:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.news-description {
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.news-description p {
+    margin: 5px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .news-card {
+        max-width: 95%;
+        padding: 15px;
+    }
+    
+    .news-title {
+        font-size: 18px;
+    }
+    
+    .news-icon {
+        font-size: 28px;
+    }
+}

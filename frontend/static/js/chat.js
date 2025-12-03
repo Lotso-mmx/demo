@@ -505,6 +505,63 @@ document.addEventListener('DOMContentLoaded', function() {
         alert(data.message);
     });
     
+    // 监听新闻卡片
+    socket.on('news_card', function(data) {
+        console.log('收到新闻数据:', data);
+        
+        // 创建新闻卡片
+        const newsCard = document.createElement('div');
+        newsCard.className = 'news-card';
+        
+        if (data.type === 'image') {
+            // 图片类型新闻
+            newsCard.innerHTML = `
+                <div class="news-card-header">
+                    <span class="news-icon">📰</span>
+                    <div class="news-title-info">
+                        <h3 class="news-title">${data.title}</h3>
+                        <span class="news-date">${data.date}</span>
+                    </div>
+                </div>
+                <div class="news-card-body">
+                    <img src="${data.url}" alt="每天60秒新闻" class="news-image" />
+                    <div class="news-description">
+                        <p>点击图片查看大图</p>
+                    </div>
+                </div>
+            `;
+            
+            // 添加图片点击放大功能
+            const newsImage = newsCard.querySelector('.news-image');
+            newsImage.addEventListener('click', function() {
+                window.open(data.url, '_blank');
+            });
+        } else {
+            // JSON类型新闻（备用）
+            newsCard.innerHTML = `
+                <div class="news-card-header">
+                    <span class="news-icon">📰</span>
+                    <div class="news-title-info">
+                        <h3 class="news-title">${data.title}</h3>
+                        <span class="news-date">${data.date}</span>
+                    </div>
+                </div>
+                <div class="news-card-body">
+                    <p>新闻内容加载成功</p>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(newsCard);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+    
+    // 监听新闻错误
+    socket.on('news_error', function(data) {
+        console.log('新闻查询错误:', data);
+        alert(data.message);
+    });
+    
     // 切换天气背景函数
     function changeWeatherBackground(bgClass) {
         const body = document.querySelector('.chat-body');
