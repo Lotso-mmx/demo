@@ -9,6 +9,7 @@ import os
 import openai
 import time
 import asyncio
+from weather_handler import weather_handler
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -151,8 +152,58 @@ def handle_message(data):
         message_type = 'text'
         additional_data = None
     
+        # 检查是否是@天气命令
+        if message.startswith('@天气'):
+            parts = message.split(' ', 1)
+            if len(parts) > 1:
+                city = parts[1].strip()
+                if city:
+                    print(f"处理@天气命令: 城市={city}")
+                    
+                    # 先发送用户消息到聊天室
+                    emit('new_message', {
+                        'username': username,
+                        'message': message,
+                        'timestamp': timestamp,
+                        'type': 'text'
+                    }, room=room_name)
+                    
+                    # 处理天气查询
+                    weather_data = weather_handler.handle_weather_command(message)
+                    print(f"天气查询结果: {weather_data}")
+                    
+                    if weather_data:
+                        # 成功获取天气，广播天气卡片
+                        emit('weather_card', {
+                            'city': weather_data['city'],
+                            'temp': weather_data['temp'],
+                            'text': weather_data['text'],
+                            'humidity': weather_data['humidity'],
+                            'wind': weather_data['wind'],
+                            'wind_speed': weather_data['wind_speed'],
+                            'bgClass': weather_data['bgClass']
+                        }, room=room_name)
+                        print("天气卡片已发送")
+                        
+                        # 保存天气命令消息到历史
+                        history_messages.append({
+                            'username': username,
+                            'message': message,
+                            'timestamp': timestamp,
+                            'type': 'text',
+                            'additional_data': None
+                        })
+                    else:
+                        # 天气查询失败，发送错误消息
+                        emit('weather_error', {
+                            'message': '未找到城市或API异常，请检查城市名称'
+                        }, room=sid)
+                        print("天气查询失败")
+                    
+                    # 不执行后续的默认消息发送
+                    return
         # 检查是否是@电影命令
-        if message.startswith('@电影'):
+        elif message.startswith('@电影'):
             parts = message.split(' ', 1)
             if len(parts) > 1:
                 message_type = 'movie'

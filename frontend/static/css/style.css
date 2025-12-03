@@ -167,6 +167,8 @@ body {
     height: 100vh;
     display: flex;
     overflow: hidden;
+    background: #ffffff;
+    transition: background 1.5s ease-in-out;
 }
 
 .chat-container {
@@ -576,4 +578,336 @@ body {
         margin: 20px;
         padding: 30px;
     }
+}
+
+/* ========== 天气功能样式 ========== */
+
+/* 天气卡片样式 */
+.weather-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 15px 0;
+    max-width: 400px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    color: white;
+    align-self: center;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.weather-card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.weather-icon {
+    font-size: 32px;
+    margin-right: 12px;
+}
+
+.weather-city {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.weather-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.weather-temp {
+    font-size: 48px;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.weather-text {
+    font-size: 18px;
+    text-align: center;
+    opacity: 0.9;
+}
+
+.weather-details {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.weather-detail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.detail-label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.detail-value {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* 天气背景样式 */
+
+/* 默认背景 */
+.chat-body {
+    background: #ffffff;
+    position: relative;
+}
+
+/* 晴天背景 */
+.chat-body.weather-sunny {
+    background: 
+        linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
+        url('http://pic.sc.chinaz.com/files/pic/pic9/201602/apic19010.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    transition: background 1.5s ease-in-out;
+}
+
+.chat-body.weather-sunny::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    filter: blur(3px);
+    z-index: 0;
+}
+
+.chat-body.weather-sunny .chat-main {
+    background: rgba(255, 255, 255, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.chat-body.weather-sunny .sidebar {
+    background: rgba(255, 250, 205, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 多云背景 */
+.chat-body.weather-cloudy {
+    background: 
+        linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
+        url('https://cdn.pixabay.com/photo/2017/04/19/09/03/air-2241555_960_720.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    transition: background 1.5s ease-in-out;
+    position: relative;
+}
+
+.chat-body.weather-cloudy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    filter: blur(3px);
+    z-index: 0;
+}
+
+.chat-body.weather-cloudy .chat-main {
+    background: rgba(255, 255, 255, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.chat-body.weather-cloudy .sidebar {
+    background: rgba(230, 230, 250, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 雨天背景 */
+.chat-body.weather-rainy {
+    background: 
+        linear-gradient(rgba(30, 30, 50, 0.4), rgba(10, 10, 30, 0.4)),
+        url('https://cdn.pixabay.com/photo/2016/11/22/19/08/rain-1850101_960_720.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    position: relative;
+    transition: background 1.5s ease-in-out;
+}
+
+.chat-body.weather-rainy::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    filter: blur(3px);
+    z-index: 0;
+}
+
+.chat-body.weather-rainy .chat-main {
+    background: rgba(255, 255, 255, 0.7) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+}
+
+.chat-body.weather-rainy .sidebar {
+    background: rgba(200, 210, 220, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 雨滴动画 */
+.chat-body.weather-rainy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(transparent, transparent 90%, rgba(255, 255, 255, 0.3) 90%, transparent),
+        linear-gradient(90deg, transparent, transparent 90%, rgba(255, 255, 255, 0.2) 90%, transparent);
+    background-size: 50px 50px, 30px 30px;
+    animation: rain 0.5s linear infinite;
+    pointer-events: none;
+    z-index: 3;
+}
+
+@keyframes rain {
+    0% {
+        background-position: 0 0, 0 0;
+    }
+    100% {
+        background-position: 50px 50px, 30px 30px;
+    }
+}
+
+/* 雪天背景 */
+.chat-body.weather-snowy {
+    background: 
+        linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
+        url('http://pic.616pic.com/bg_w1180/00/15/22/LqTJqvUCUk.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    position: relative;
+    transition: background 1.5s ease-in-out;
+}
+
+.chat-body.weather-snowy::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    filter: blur(3px);
+    z-index: 0;
+}
+
+.chat-body.weather-snowy .chat-main {
+    background: rgba(255, 255, 255, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.chat-body.weather-snowy .sidebar {
+    background: rgba(240, 248, 255, 0.75) !important;
+    transition: background 0.8s ease-in-out;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 雪花动画 */
+.chat-body.weather-snowy::before {
+    content: '❄️';
+    position: absolute;
+    top: -10%;
+    left: 0;
+    width: 100%;
+    height: 110%;
+    font-size: 20px;
+    animation: snowfall 10s linear infinite;
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0.6;
+}
+
+@keyframes snowfall {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100%);
+    }
+}
+
+/* 确保聊天内容在背景之上 */
+.chat-body .chat-container {
+    position: relative;
+    z-index: 2;
+}
+
+/* 天气通知动画 */
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.weather-notification {
+    font-size: 14px;
+    font-weight: 500;
+    pointer-events: none;
 }

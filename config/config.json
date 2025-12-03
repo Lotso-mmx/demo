@@ -19,5 +19,15 @@
     "app": {
         "debug": true,
         "secret_key": "your-secret-key-here"
+    },
+    "weather": {
+        "api_key": "168da511bb4d40e2a596fcc7f1c34cae",
+        "api_url": "https://devapi.qweather.com/v7/weather/now",
+        "background_mapping": {
+            "sunny": ["晴", "Sunny", "Clear"],
+            "cloudy": ["云", "Cloudy", "阴", "Overcast", "雾", "Fog", "霞", "Haze"],
+            "rainy": ["雨", "Rain", "雷", "Thunder", "阵雨", "Shower"],
+            "snowy": ["雪", "Snow"]
+        }
     }
 }

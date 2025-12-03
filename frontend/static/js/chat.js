@@ -448,6 +448,112 @@ document.addEventListener('DOMContentLoaded', function() {
         // 滚动到底部
         chatMessages.scrollTop = chatMessages.scrollHeight;
     });
+    
+    // 监听天气卡片
+    socket.on('weather_card', function(data) {
+        console.log('收到天气数据:', data);
+        
+        // 根据天气类型选择图标
+        let weatherIcon = '☀️'; // 默认晴天
+        if (data.bgClass === 'sunny') {
+            weatherIcon = '☀️';
+        } else if (data.bgClass === 'cloudy') {
+            weatherIcon = '☁️';
+        } else if (data.bgClass === 'rainy') {
+            weatherIcon = '🌧️';
+        } else if (data.bgClass === 'snowy') {
+            weatherIcon = '❄️';
+        }
+        
+        // 创建天气卡片
+        const weatherCard = document.createElement('div');
+        weatherCard.className = 'weather-card';
+        weatherCard.innerHTML = `
+            <div class="weather-card-header">
+                <span class="weather-icon">${weatherIcon}</span>
+                <span class="weather-city">${data.city}</span>
+            </div>
+            <div class="weather-card-body">
+                <div class="weather-temp">${data.temp}°C</div>
+                <div class="weather-text">${data.text}</div>
+                <div class="weather-details">
+                    <div class="weather-detail-item">
+                        <span class="detail-label">💧 湿度</span>
+                        <span class="detail-value">${data.humidity}%</span>
+                    </div>
+                    <div class="weather-detail-item">
+                        <span class="detail-label">💨 风速</span>
+                        <span class="detail-value">${data.wind}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(weatherCard);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // 切换聊天室背景
+        changeWeatherBackground(data.bgClass);
+        
+        // 显示背景切换提示
+        showWeatherNotification(data.text, data.bgClass);
+    });
+    
+    // 监听天气错误
+    socket.on('weather_error', function(data) {
+        console.log('天气查询错误:', data);
+        alert(data.message);
+    });
+    
+    // 切换天气背景函数
+    function changeWeatherBackground(bgClass) {
+        const body = document.querySelector('.chat-body');
+        
+        if (!body) {
+            console.error('找不到.chat-body元素');
+            return;
+        }
+        
+        // 移除所有天气背景类
+        body.classList.remove('weather-sunny', 'weather-cloudy', 'weather-rainy', 'weather-snowy');
+        
+        // 添加新的天气背景类
+        if (bgClass) {
+            const weatherClass = `weather-${bgClass}`;
+            body.classList.add(weatherClass);
+            console.log(`已切换背景为: ${weatherClass}`);
+            console.log(`当前body的class: ${body.className}`);
+        }
+    }
+    
+    // 显示天气通知
+    function showWeatherNotification(weatherText, bgClass) {
+        const notification = document.createElement('div');
+        notification.className = 'weather-notification';
+        notification.textContent = `背景已切换为: ${weatherText}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(156, 39, 176, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            animation: slideInRight 0.5s ease-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.5s ease-out';
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
 
     // 事件监听 - DOM
     try {
