@@ -1,13 +1,15 @@
 import requests
 from typing import Optional, Dict
 import json
+from models.config import config_manager
 
 class MusicHandler:
     def __init__(self):
-        # ALAPI 音乐接口
-        self.music_search_url = 'https://v2.alapi.cn/api/music/search'
-        self.music_url_api = 'https://v2.alapi.cn/api/music/url'
-        self.api_token = 'ubsihtf1qt3vg5f8juy2jxgvgeh5ij'
+        # 使用配置管理器加载配置
+        music_config = config_manager.get_api_config('music')
+        self.music_search_url = music_config.get('alapi_search_url', 'https://v2.alapi.cn/api/music/search')
+        self.music_url_api = music_config.get('alapi_url_api', 'https://v2.alapi.cn/api/music/url')
+        self.api_token = music_config.get('alapi_token', '')
     
     def _id_to_url(self, pic_id):
         """

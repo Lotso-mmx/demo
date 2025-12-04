@@ -13,24 +13,23 @@ from weather_handler import weather_handler
 from news_handler import news_handler
 from music_handler import music_handler
 from models.user import user_model
+from models.config import config_manager
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
+# 使用配置管理器加载配置
+app.config['SECRET_KEY'] = config_manager.get('app.secret_key', 'default-secret-key')
+
 # 配置OpenAI API
+ai_config = config_manager.get_api_config('ai')
 oai_client = openai.OpenAI(
-    api_key='sk-curqupvhfgebshadtwltojqmuhaxlkxmfqgpcptxxazpqqgb',
-    base_url='https://api.siliconflow.cn/v1/'
+    api_key=ai_config.get('api_key', ''),
+    base_url=ai_config.get('base_url', '')
 )
 
 # 存储历史消息
 history_messages = []
 
-# 从配置文件加载配置
-config_path = os.path.join(os.path.dirname(__file__), '../config/config.json')
-with open(config_path, 'r', encoding='utf-8') as f:
-    config = json.load(f)
-
-app.config['SECRET_KEY'] = config['app']['secret_key']
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
 
 # 存储在线用户信息
@@ -52,7 +51,8 @@ def chat():
 
 @app.route('/api/servers')
 def get_servers():
-    return jsonify(config['servers'])
+    """获取服务器列表"""
+    return jsonify(config_manager.get_servers())
 
 @app.route('/api/check_username', methods=['POST'])
 def check_username():
@@ -90,6 +90,29 @@ def login():
         
     except Exception as e:
         print(f"登录接口错误: {e}")
+        return jsonify({'success': False, 'message': '服务器错误'})
+
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    """获取配置（仅管理员）"""
+    # TODO: 添加管理员验证
+    return jsonify(config_manager.config)
+
+@app.route('/api/config', methods=['POST'])
+def update_config():
+    """更新配置（仅管理员）"""
+    # TODO: 添加管理员验证
+    try:
+        data = request.json
+        key = data.get('key')
+        value = data.get('value')
+        
+        if config_manager.set(key, value):
+            return jsonify({'success': True, 'message': '配置已更新'})
+        else:
+            return jsonify({'success': False, 'message': '配置更新失败'})
+    except Exception as e:
+        print(f"更新配置错误: {e}")
         return jsonify({'success': False, 'message': '服务器错误'})
 
 @socketio.on('connect')
@@ -197,8 +220,12 @@ def get_ai_response(query):
 以提示词+AI开发工具开发趣味软件的案例 
 正式启动项目开发了"""
         
+        # 从config获取AI模型
+        ai_config = config_manager.get_api_config('ai')
+        model = ai_config.get('model', 'Qwen/Qwen2.5-7B-Instruct')
+        
         response = oai_client.chat.completions.create(
-            model="Qwen/Qwen2.5-7B-Instruct",
+            model=model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": query}
@@ -521,4 +548,5 @@ if __name__ == '__main__':
     host = 'localhost'  # 使用localhost以便浏览器正确访问
     port = 5000
     print(f"服务器启动在 http://localhost:{port} (或 http://127.0.0.1:{port})")
-    socketio.run(app, host=host, port=port, debug=config['app']['debug'])
+    debug_mode = config_manager.get('app.debug', False)
+    socketio.run(app, host=host, port=port, debug=debug_mode)

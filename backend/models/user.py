@@ -23,8 +23,9 @@ class UserModel:
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 nickname TEXT NOT NULL,
-                status TEXT DEFAULT 'offline',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                last_login TEXT,
+                status TEXT DEFAULT 'offline'
             )
         ''')
         
@@ -106,16 +107,28 @@ class UserModel:
             )
             
             user_data = cursor.fetchone()
-            conn.close()
             
             if not user_data:
+                conn.close()
                 return {'success': False, 'message': '用户名或密码错误'}
             
             user_id, username, password_hash, nickname, status = user_data
             
             # 验证密码
             if not bcrypt.checkpw(password.encode('utf-8'), password_hash):
+                conn.close()
                 return {'success': False, 'message': '用户名或密码错误'}
+            
+            # 更新最后登录时间
+            from datetime import datetime
+            last_login = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute(
+                'UPDATE users SET last_login = ? WHERE username = ?',
+                (last_login, username)
+            )
+            
+            conn.commit()
+            conn.close()
             
             print(f"用户登录成功: {username} (昵称: {nickname})")
             
@@ -126,7 +139,8 @@ class UserModel:
                     'id': user_id,
                     'username': username,
                     'nickname': nickname,
-                    'status': status
+                    'status': status,
+                    'last_login': last_login
                 }
             }
             

@@ -2,17 +2,24 @@ import requests
 import json
 import os
 from typing import Dict, Optional
+from models.config import config_manager
 
 class WeatherHandler:
     def __init__(self):
-        # 从配置文件加载天气API配置
-        config_path = os.path.join(os.path.dirname(__file__), '../config/config.json')
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
+        # 使用配置管理器加载配置
+        weather_config = config_manager.get_api_config('weather')
+        self.api_key = weather_config.get('qweather_key', '')
+        self.api_url = weather_config.get('qweather_url', 'https://devapi.qweather.com/v7') + '/weather/now'
         
-        self.api_key = config['weather']['api_key']
-        self.api_url = config['weather']['api_url']
-        self.weather_bg_map = config['weather']['background_mapping']
+        # 天气背景映射
+        themes = config_manager.get('themes.weather_backgrounds', {})
+        # 转换为反向映射（关键词 -> 背景类）
+        self.weather_bg_map = {
+            'sunny': ['晴', 'Sunny', 'Clear'],
+            'cloudy': ['云', 'Cloudy', '阴', 'Overcast', '雾', 'Fog', '霞', 'Haze'],
+            'rainy': ['雨', 'Rain', '雷', 'Thunder', '阵雨', 'Shower'],
+            'snowy': ['雪', 'Snow']
+        }
     
     def get_city_location(self, city: str) -> Optional[str]:
         """

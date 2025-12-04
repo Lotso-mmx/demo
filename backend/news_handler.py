@@ -1,12 +1,14 @@
 import requests
 from typing import Optional, Dict
 import json
+from models.config import config_manager
 
 class NewsHandler:
     def __init__(self):
-        # ALAPI 每日早报接口
-        self.news_api_url = 'https://v2.alapi.cn/api/zaobao'
-        self.api_token = 'ubsihtf1qt3vg5f8juy2jxgvgeh5ij'
+        # 使用配置管理器加载配置
+        news_config = config_manager.get_api_config('news')
+        self.news_api_url = news_config.get('alapi_url', 'https://v2.alapi.cn/api') + '/zaobao'
+        self.api_token = news_config.get('alapi_token', '')
     
     def get_daily_news(self) -> Optional[Dict]:
         """

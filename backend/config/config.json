@@ -1,0 +1,56 @@
+{
+    "app": {
+        "secret_key": "your-secret-key-here-change-it"
+    },
+    "servers": [
+        {
+            "name": "本地服务器",
+            "url": "http://localhost:5000"
+        },
+        {
+            "name": "局域网服务器",
+            "url": "http://192.168.1.100:5000"
+        }
+    ],
+    "apis": {
+        "weather": {
+            "provider": "wttr.in",
+            "wttr_url": "https://wttr.in",
+            "qweather_key": "",
+            "qweather_url": "https://devapi.qweather.com/v7"
+        },
+        "news": {
+            "provider": "alapi",
+            "alapi_token": "ubsihtf1qt3vg5f8juy2jxgvgeh5ij",
+            "alapi_url": "https://v2.alapi.cn/api"
+        },
+        "music": {
+            "provider": "alapi",
+            "alapi_token": "ubsihtf1qt3vg5f8juy2jxgvgeh5ij",
+            "alapi_search_url": "https://v2.alapi.cn/api/music/search",
+            "alapi_url_api": "https://v2.alapi.cn/api/music/url",
+            "player_url": "https://v3.alapi.cn/api/music/url"
+        },
+        "ai": {
+            "provider": "siliconflow",
+            "api_key": "sk-curqupvhfgebshadtwltojqmuhaxlkxmfqgpcptxxazpqqgb",
+            "base_url": "https://api.siliconflow.cn/v1/",
+            "model": "Qwen/Qwen2.5-7B-Instruct"
+        }
+    },
+    "themes": {
+        "weather_backgrounds": {
+            "sunny": "weather-sunny",
+            "cloudy": "weather-cloudy",
+            "rainy": "weather-rainy",
+            "snowy": "weather-snowy"
+        }
+    },
+    "features": {
+        "enable_music": true,
+        "enable_weather": true,
+        "enable_news": true,
+        "enable_ai": true,
+        "enable_movie": true
+    }
+}
