@@ -12,6 +12,7 @@ import asyncio
 from weather_handler import weather_handler
 from news_handler import news_handler
 from music_handler import music_handler
+from models.user import user_model
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -60,6 +61,37 @@ def check_username():
         return jsonify({'available': False})
     return jsonify({'available': True})
 
+@app.route('/api/register', methods=['POST'])
+def register():
+    """用户注册接口"""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        nickname = data.get('nickname')
+        
+        result = user_model.register(username, password, nickname)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"注册接口错误: {e}")
+        return jsonify({'success': False, 'message': '服务器错误'})
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """用户登录接口"""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        result = user_model.login(username, password)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"登录接口错误: {e}")
+        return jsonify({'success': False, 'message': '服务器错误'})
+
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
@@ -68,18 +100,39 @@ def handle_connect():
 def handle_disconnect():
     sid = request.sid
     # 查找断开连接的用户
+    username_to_remove = None
     for username, user_info in online_users.items():
         if user_info['sid'] == sid:
-            # 从房间移除用户
-            leave_room(room_name, sid)
-            # 从在线用户列表移除
-            del online_users[username]
-            # 通知房间内其他用户
-            emit('user_left', {
-                'username': username,
-                'online_users': list(online_users.keys())
-            }, room=room_name)
+            username_to_remove = username
             break
+    
+    if username_to_remove:
+        # 从房间移除用户
+        leave_room(room_name, sid)
+        
+        # 更新数据库状态
+        user_model.update_status(username_to_remove, 'offline')
+        
+        # 从在线用户列表移除
+        del online_users[username_to_remove]
+        
+        # 获取用户信息（显示昵称）
+        user_info_db = user_model.get_user(username_to_remove)
+        nickname = user_info_db['nickname'] if user_info_db else username_to_remove
+        
+        # 广播下线通知
+        emit('system_message', {
+            'message': f'{nickname} 下线了',
+            'timestamp': int(time.time() * 1000)
+        }, room=room_name)
+        
+        # 通知房间内其他用户
+        emit('user_left', {
+            'username': username_to_remove,
+            'online_users': list(online_users.keys())
+        }, room=room_name)
+        
+        print(f"用户下线: {nickname} ({username_to_remove})")
 
 @socketio.on('login')
 def handle_login(data):
@@ -91,24 +144,41 @@ def handle_login(data):
         emit('login_failed', {'message': '用户名已存在'})
         return
     
+    # 获取用户信息（用于显示昵称）
+    user_info_db = user_model.get_user(username)
+    nickname = user_info_db['nickname'] if user_info_db else username
+    
+    # 更新数据库状态为在线
+    user_model.update_status(username, 'online')
+    
     # 保存用户信息并加入房间
-    online_users[username] = {'sid': sid}
+    online_users[username] = {'sid': sid, 'nickname': nickname}
     join_room(room_name, sid)
     
     # 通知用户登录成功
     emit('login_success', {
         'username': username,
+        'nickname': nickname,
         'online_users': list(online_users.keys())
     })
     
     # 发送历史消息给新登录用户
     emit('history_messages', history_messages, room=sid)
     
+    # 广播上线通知
+    emit('system_message', {
+        'message': f'{nickname} 上线了',
+        'timestamp': int(time.time() * 1000)
+    }, room=room_name)
+    
     # 通知房间内其他用户有新用户加入
     emit('user_joined', {
         'username': username,
+        'nickname': nickname,
         'online_users': list(online_users.keys())
     }, room=room_name, skip_sid=sid)
+    
+    print(f"用户上线: {nickname} ({username})")
 
 def get_ai_response(query):
     """获取AI响应"""

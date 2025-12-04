@@ -25,16 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 从localStorage获取用户信息
     const username = localStorage.getItem('chat_username');
-    const serverStr = localStorage.getItem('chat_server');
 
     // 检查是否已登录
-    if (!username || !serverStr) {
+    if (!username) {
+        console.log('未登录，跳转到登录页');
         window.location.href = '/';
         return;
     }
-
-    // 解析服务器信息
-    const server = JSON.parse(serverStr);
+    
+    console.log('当前登录用户:', username);
 
     // 创建WebSocket连接
     let socket = io(window.location.origin, {
@@ -316,7 +315,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (socket) {
             socket.disconnect();
         }
+        // 清除所有用户相关的localStorage
         localStorage.removeItem('chat_username');
+        localStorage.removeItem('chat_nickname');
+        localStorage.removeItem('chat_user');
         localStorage.removeItem('chat_server');
         window.location.href = '/';
     }
@@ -349,6 +351,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('登录失败:', data);
         alert('登录失败: ' + data.message);
         window.location.href = '/';
+    });
+    
+    // 监听系统消息（上线/下线通知）
+    socket.on('system_message', function(data) {
+        console.log('收到系统消息:', data);
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'system-message';
+        messageDiv.textContent = data.message;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
     
     // 添加调试信息，监听消息发送成功的确认

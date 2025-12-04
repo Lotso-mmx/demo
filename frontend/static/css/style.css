@@ -140,6 +140,28 @@ body {
     visibility: hidden;
 }
 
+.form-group .hint {
+    visibility: visible;
+    color: #999999;
+}
+
+.switch-form {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666666;
+}
+
+.switch-form a {
+    color: #9c27b0;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.switch-form a:hover {
+    text-decoration: underline;
+}
+
 .btn-primary {
     width: 100%;
     padding: 12px;
@@ -405,6 +427,18 @@ body {
 
 .ai-message.thinking {
     opacity: 0.7;
+}
+
+/* 系统消息样式 */
+.system-message {
+    text-align: center;
+    padding: 8px 16px;
+    margin: 10px auto;
+    background-color: rgba(156, 39, 176, 0.08);
+    border-radius: 20px;
+    color: #9c27b0;
+    font-size: 13px;
+    max-width: 400px;
 }
 
 .thinking-dots {
