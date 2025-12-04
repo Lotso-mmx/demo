@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // 默认封面图片 - 使用可访问的占位图
+    const DEFAULT_COVER = 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg';
+    
     // 获取DOM元素
     const chatMessages = document.getElementById('chat-messages');
     const messageInput = document.getElementById('message-input');
@@ -559,6 +562,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // 监听新闻错误
     socket.on('news_error', function(data) {
         console.log('新闻查询错误:', data);
+        alert(data.message);
+    });
+    
+    // 全局音乐播放器
+    let currentAudio = null;
+    let currentMusicId = null;
+    
+    // 监听音乐卡片
+    socket.on('music_card', function(data) {
+        console.log('收到音乐数据:', data);
+        
+        // 创建音乐卡片
+        const musicCard = document.createElement('div');
+        musicCard.className = 'music-card';
+        musicCard.setAttribute('data-music-id', data.id);
+        
+        // 构造播放器URL
+        const apiKey = 'f2bb172fe78e0ecf5846468e4ddd4686';
+        const playerUrl = `https://api.oick.cn/api/wyy?id=${data.id}&apikey=${apiKey}`;
+        
+        musicCard.innerHTML = `
+            <div class="music-card-info">
+                <h3 class="music-name">${data.name}</h3>
+                <p class="music-artist">${data.artist}</p>
+            </div>
+            <iframe src="${playerUrl}" 
+                    style="width:100%; height:66px; border:none; border-radius:8px; margin-top:10px;"
+                    frameborder="0" 
+                    allow="autoplay">
+            </iframe>
+        `;
+        
+        chatMessages.appendChild(musicCard);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+    
+    // 格式化时间
+    function formatTime(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // 监听音乐错误
+    socket.on('music_error', function(data) {
+        console.log('音乐搜索错误:', data);
         alert(data.message);
     });
     

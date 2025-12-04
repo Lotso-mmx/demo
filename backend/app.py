@@ -2,7 +2,7 @@ import eventlet
 # 使用eventlet作为异步后端，必须在导入其他模块之前调用
 eventlet.monkey_patch()
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
@@ -11,6 +11,7 @@ import time
 import asyncio
 from weather_handler import weather_handler
 from news_handler import news_handler
+from music_handler import music_handler
 
 app = Flask(__name__, template_folder='../frontend/templates', static_folder='../frontend/static')
 
@@ -34,6 +35,11 @@ socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins='*')
 # 存储在线用户信息
 online_users = {}
 room_name = 'default_room'
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, '../frontend/static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/')
 def index():
@@ -153,8 +159,46 @@ def handle_message(data):
         message_type = 'text'
         additional_data = None
     
+        # 检查是否是@听音乐命令
+        if message.startswith('@听音乐'):
+            print(f"处理@听音乐命令")
+            
+            # 先发送用户消息到聊天室
+            emit('new_message', {
+                'username': username,
+                'message': message,
+                'timestamp': timestamp,
+                'type': 'text'
+            }, room=room_name)
+            
+            # 处理音乐搜索
+            music_data = music_handler.handle_music_command(message)
+            print(f"音乐搜索结果: {music_data}")
+            
+            if music_data:
+                # 成功获取音乐，广播音乐卡片
+                emit('music_card', music_data, room=room_name)
+                print("音乐卡片已发送")
+                
+                # 保存音乐命令消息到历史
+                history_messages.append({
+                    'username': username,
+                    'message': message,
+                    'timestamp': timestamp,
+                    'type': 'text',
+                    'additional_data': None
+                })
+            else:
+                # 音乐搜索失败，发送错误消息
+                emit('music_error', {
+                    'message': '音乐搜索失败，请检查歌名或稍后再试'
+                }, room=sid)
+                print("音乐搜索失败")
+            
+            # 不执行后续的默认消息发送
+            return
         # 检查是否是@每天60s命令
-        if message.startswith('@每天60s') or message.startswith('@每天60秒'):
+        elif message.startswith('@每天60s') or message.startswith('@每天60秒'):
             print(f"处理@每天60s命令")
             
             # 先发送用户消息到聊天室
@@ -373,6 +417,35 @@ def handle_message(data):
         traceback.print_exc()  # 打印完整的错误堆栈
         # 发送错误消息给客户端
         emit('error', {'message': f'服务器处理消息时发生错误: {type(e).__name__}'}, room=request.sid)
+
+# 音乐控制事件
+@socketio.on('music_control')
+def handle_music_control(data):
+    """
+    处理音乐播放控制（播放/暂停/停止）
+    """
+    try:
+        action = data.get('action')  # 'play', 'pause', 'stop'
+        music_id = data.get('musicId')
+        username = data.get('username', '未知用户')
+        room_name = data.get('room', 'default_room')
+        
+        print(f"音乐控制: 用户={username}, 动作={action}, 音乐ID={music_id}")
+        
+        # 广播音乐控制命令到房间所有用户
+        emit('music_control_broadcast', {
+            'action': action,
+            'musicId': music_id,
+            'username': username,
+            'timestamp': int(time.time() * 1000)
+        }, room=room_name)
+        
+        print(f"音乐控制命令已广播: {action}")
+        
+    except Exception as e:
+        print(f"处理音乐控制错误: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == '__main__':
     host = 'localhost'  # 使用localhost以便浏览器正确访问
